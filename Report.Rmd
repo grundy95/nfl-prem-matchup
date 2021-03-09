@@ -1,0 +1,115 @@
+---
+title: "Cluserting Premier League and NFL Teams"
+author: "Tom Grundy"
+date: "09/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggrepel)
+```
+
+This project seeks to group Premier League and NFL teams based upon there attacking and defensive strengths. The analysis was peroformed in R with data obtained from <https://www.football-data.co.uk/englandm.php> and <https://github.com/leesharpe/nfldata>. For a less technical summary, see INSERT BLOG POST.
+
+## Project Aims
+
+* Create an attacking and defensive metric for all Premier League and NFL teams
+* Visulaization of the attacking and defensive metric to comapre teams
+* Cluster the teams based upon the attacking and defensive metric
+* Create a final grouping of the teams to allow a user to find there favourite Premier League or NFL team and find similar teams in the alternative league.
+
+## Data Choices/Cleaning
+First, we decide upon the data to be used in the project. Due to the Premier League having promotions and relegations, performing analysis over multiple seasons is difficult. Hence, we will use just the 2019/2020 season as this is the last fully completed season which balances having enough data to create a relevant metric while still being relevent. As the 2020/2021 NFL season has finished we could use the most upto date season, however, in order to be consistent with the Prmier League we also use the 2019/2020 season. This will also allow future anlysis of the 2020/2021 season once the Prmier League has finished.
+
+Next, we obtain the relevent data. The relevent Premier League data is available at <https://www.football-data.co.uk/englandm.php> in a .csv format. The spreadsheet contains all the results from the 2019/2020 Premier League season. From this we can clean the data to obtain the number of goals scored and conceed by each team over the season. 
+
+```{r dataCleaningPrem}
+prem = read_csv('data/prem19_20.csv')%>%
+  select(HomeTeam, AwayTeam, FTHG, FTAG)%>%
+  group_by(HomeTeam)%>%
+  mutate('HomeGoals'=sum(FTHG), 'HomeConceeded'=sum(FTAG))%>%
+  ungroup()%>%
+  group_by(AwayTeam)%>%
+  mutate('AwayGoals'=sum(FTAG), 'AwayConceeded'=sum(FTHG))%>%
+  ungroup()
+premHome = select(prem, HomeTeam, HomeGoals, HomeConceeded)%>%
+  unique()%>%
+  rename('Team'=HomeTeam)%>%
+  arrange(Team)
+  
+premAway = select(prem, AwayTeam, AwayGoals, AwayConceeded)%>%
+  unique()%>%
+  rename('Team'=AwayTeam)%>%
+  arrange(Team)
+
+prem19_20 = right_join(premHome, premAway, by=c('Team'='Team'))%>%
+  mutate('GF'=HomeGoals+AwayGoals, 'GA'=HomeConceeded+AwayConceeded)%>%
+  select(Team, GF, GA)
+save(prem19_20, premHome, premAway, file='./data/prem19_20.Rdata')
+prem19_20
+```
+
+The NFL data was obtained from <https://github.com/leesharpe/nfldata>. This spreadsheet contains multiple summary statistics for each NFL team for each year. From this we can clean the data so it shows the number of points scored and conceeded by each team in the 2019/2020 season. We will abuse the NFL notation by calling renaming points as goals.
+
+```{r dataCleaningNFL}
+nfl19_20 = read_csv("data/nfl.csv")%>%
+  select(season, team, scored, allowed)%>%
+  filter(season==2019)%>%
+  select(-season)%>%
+  rename('Team'=team, 'GF'=scored, 'GA'=allowed)
+save(nfl19_20, file='./data/nfl19_20.Rdata')
+nfl19_20
+```
+
+With the data cleaned an in a useable format we can now explore the data in more depth.
+
+## Data Exploration
+To compare across the Premier League and NFL we standardise the goals scored and conceeded by each team. This is done by taking the taking the number of goals scored/conceeded by each team and subtracting the league mean and divding through by the standard deviation in each league. This will produce a normalised attacking and defensive score that will be comparable across the two leagues. The defensive scores were multiplied by -1 so a large value indicates a better defensive performance.
+
+```{r dataExplorationNormalising}
+premGFmean = mean(prem19_20$GF)
+premGFvar = var(prem19_20$GF)
+
+premGAmean = mean(prem19_20$GA)
+premGAvar = var(prem19_20$GA)
+
+premScores = prem19_20%>%
+  mutate('Attack'=(GF-premGFmean)/sqrt(premGFvar), 'Defence'= -1*(GA-premGAmean)/sqrt(premGAvar),'League'='Premier League')%>%
+  select(Team, Attack, Defence, League)
+
+nflGFmean = mean(nfl19_20$GF)
+nflGFvar = var(nfl19_20$GF)
+
+nflGAmean = mean(nfl19_20$GA)
+nflGAvar = var(nfl19_20$GA)
+
+nflScores = nfl19_20%>%
+  mutate('Attack'=(GF-nflGFmean)/sqrt(nflGFvar), 'Defence'= -1*(GA-nflGAmean)/sqrt(nflGAvar), 'League'='NFL')%>%
+  select(Team, Attack, Defence, League)
+
+Scores = bind_rows(nflScores, premScores)
+save(Scores, file='./data/scores.Rdata')
+Scores
+```
+
+### Premier League
+First, we explore the Premier League data. We can plot the relative attacking a defensive strengths of each team to get an initial look at the data.
+
+```{r dataExplorationPrem}
+load('./data/scores.Rdata')
+filter(Scores, League=='Premier League')%>%
+  ggplot(mapping=aes(x=Defence, y=Attack))+
+    geom_point()+
+    geom_abline(intercept = 0, slope=1, linetype='dashed', size=0.2)+
+    geom_text_repel(aes(label=Team, col=League))+
+    theme(legend.position='none')
+```
+From this we can see the attacking scores are right-skewed while the defensive scores are left-skewed. This makes sense as the maximum number of goals teams can score is unbounded where as the minimum is 0 so there will be a higher concentration of points close to zero while some of the better teams will score many goals. The same works in reverse for the defensive strengths. 
+
+Also, we can see the best teams in the league have a higher attacking and defensive strength than most other teams while the worst teams have the lowest scores. By looking at the line which shows equal defensive and attacking strength, we can see there seems to be teams which have a much better defensive than attacking strength.
+
+
+
+

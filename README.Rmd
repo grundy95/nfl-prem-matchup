@@ -1,0 +1,40 @@
+---
+output: 
+  html_document:
+    keep_md: yes
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(tidyverse)
+library(ggrepel)
+library(gridExtra)
+library(knitr)
+library(kableExtra)
+```
+
+# Grouping Similar NFL and Premier League Teams
+
+<!-- badges: start -->
+<!-- badges: end -->
+Ever wondered which NFL team to support based upon your favourite Premier League team? This project analyses Premier League and NFL teams and aims to match/group them based upon their respective strengths.
+
+By looking at the number of goals/points scored and conceded by each time we can assign them a offensive and defensive score. These can be standardized so that we can then compare the Premier League and NFL teams. Based upon these scores we can then use clustering to group the teams and see which Premier League and NFL teams are most similar.
+
+For the full project report see Report.html file.
+
+The final groupings of teams is given below:
+
+```{r groupings, echo=FALSE}
+load('./data/scoresClustered.Rdata')
+kable(select(scoresClustered, Cluster, Team))%>%
+  kable_styling()%>%
+  collapse_rows(latex_hline="major")%>%
+  scroll_box(height='500px')
+```
+

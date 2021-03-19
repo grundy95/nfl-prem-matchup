@@ -2,9 +2,10 @@
 title: "Cluserting Premier League and NFL Teams"
 author: "Tom Grundy"
 date: "09/03/2021"
-output: html_document
+output: 
+  html_document:
+    keep_md: yes
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(warning = FALSE)
@@ -34,8 +35,8 @@ Now, we need to decide upon an attacking a defensive metric for each team. We ar
 The Premier League data is available at <https://www.football-data.co.uk/englandm.php> in a .csv format. The spreadsheet contains all the results from the 2019/2020 Premier League season. From this we can clean the data to obtain the number of goals scored and conceded by each team over the season. 
 
 ```{r dataCleaningPrem}
-load('./data/prem19_20.Rdata')
-kable(prem19_20, caption='Premier League Teams: Goals For (GF) & Goals Agaisnt (GA)')%>%
+load('../data/prem19_20.Rdata')
+kable(prem19_20, caption='Premier League Teams: Goals For (GF) and Goals Agaisnt (GA)')%>%
   kable_styling()%>%
   scroll_box(height='200px')
 ```
@@ -44,8 +45,8 @@ kable(prem19_20, caption='Premier League Teams: Goals For (GF) & Goals Agaisnt (
 The NFL data was obtained from <https://github.com/leesharpe/nfldata>. This spreadsheet contains multiple summary statistics for each NFL team for each year. From this, we can clean the data so it shows the number of points scored and conceded by each team in the 2019/2020 season. We will abuse the NFL notation by calling renaming points as goals.
 
 ```{r dataCleaningNFL}
-load('./data/nfl19_20.Rdata')
-kable(nfl19_20, caption='NFL Teams: Points For (GF) & Points Agaisnt (GA)') %>%
+load('../data/nfl19_20.Rdata')
+kable(nfl19_20, caption='NFL Teams: Points For (GF) and Points Agaisnt (GA)') %>%
   kable_styling()%>%
   scroll_box(height='200px')
 ```
@@ -56,8 +57,8 @@ With the data cleaned and in a usable format we can now explore the data in more
 First, we show density plots of the number of goals scored and conceded in each league using a Gaussian kernel. We show a density plot and not a histogram due to the small number of data points, which makes the histogram uninformative. Hence, we abuse the fact that the number of goals is discrete and plot an estimated density.
 
 ```{r dataExplorationBasic}
-load('./data/nfl19_20.Rdata')
-load('./data/prem19_20.Rdata')
+load('../data/nfl19_20.Rdata')
+load('../data/prem19_20.Rdata')
 GFGA = bind_rows(mutate(prem19_20, 'League'='Premier League'),
                  mutate(nfl19_20, 'League'='NFL'))%>%
   pivot_longer(GF:GA,
@@ -87,7 +88,7 @@ The mean of the of the attacking and defensive score for the teams in each leagu
 An alternative method of making the attacking scores comparable would be to minus the minimum number of goals scored/conceded and divide through by the range. However, the data is right skewed (the better teams score more and the minimum you can score is 0) and this effect was exaggerated when this type of scaling was applied.
 
 ```{r dataExplorationNormalising}
-load('./data/scores.Rdata')
+load('../data/scores.Rdata')
 kable(scores, caption='Attacking and Defensive Scores') %>%
   kable_styling()%>%
   scroll_box(height='200px')
@@ -97,7 +98,7 @@ kable(scores, caption='Attacking and Defensive Scores') %>%
 First, we explore the Premier League data. We can plot the relative attacking and defensive strengths of each team to get an initial look at the data.
 
 ```{r dataExplorationPrem}
-load('./data/scores.Rdata')
+load('../data/scores.Rdata')
 filter(scores, League=='Premier League')%>%
   ggplot(mapping=aes(x=Defence, y=Attack))+
   geom_point(aes(col=League))+
@@ -113,7 +114,7 @@ We can see there is clear positive correlation between the Attacking and Defensi
 Now lets look at the NFL teams.
 
 ```{r dataExplorationNFL}
-load('./data/scores.Rdata')
+load('../data/scores.Rdata')
 filter(scores, League=='NFL')%>%
   ggplot(mapping=aes(x=Defence, y=Attack))+
   geom_point(aes(col=League))+
@@ -126,7 +127,7 @@ filter(scores, League=='NFL')%>%
 We see a similar positive correlation between attack and defence, however, this doesn't seem as strong as in the Premier League side.
 
 ```{r dataExplorationCov}
-load('./data/scores.Rdata')
+load('../data/scores.Rdata')
 premCov=filter(scores, League=='Premier League')%>%
   select("Attack", "Defence")%>%
   as.matrix(ncol=2)%>%
@@ -230,7 +231,7 @@ This shows the NFL teams have less correlation between there attacking and defen
 As the attacking and defensive scores of teams from both leagues have been scaled we can compare them directly. The plot below shows all the teams across the two leagues.
 
 ```{r dataExplorationCombine}
-load('./data/scores.Rdata')
+load('../data/scores.Rdata')
 ggplot(scores, mapping=aes(x=Defence, y=Attack))+
 geom_point(aes(col=League))+
 geom_text_repel(aes(label=Team, col=League))+
@@ -250,7 +251,7 @@ The hardest part of k-means clustering (and many clustering algorithms) is decid
 The k-means algorithm doesn't always converge to a unique solution and hence can produce different clusters. This is especially true in our scenario where the data points are not well separated. Do to this non-unique convergence and using our rule for obtaining the number of clusters, we will get different numbers of clusters for different runs of the k-means algorithm. In an ideal scenario, we desire as close to a one-to-one matching of the teams as possible, hence the more clusters the better. As a result, we let the k-means algorithms run multiple times and select the run that returns the most clusters, essentially optimizing the k-means clustering for our objective - as many clusters as possible.
 
 ```{r kMeans}
-load('./data/scoresClustered.Rdata')
+load('../data/scoresClustered.Rdata')
 
 ggplot(scoresClustered, mapping=aes(x=Defence, y=Attack))+
   geom_point(aes(col=Cluster))+
@@ -262,15 +263,15 @@ This gives us 13 clusters of Teams and visually they look reasonable. See the bo
 
 1. **Miami and Norwich:** True underdogs, both these teams have poor attacking and defensive strengths compared to the teams in their leagues. Interestingly, there were actually 5 worse teams in the NFL than Miami in terms of winning percentage. This shows grouping by attacking and defensive strength gives more insight than by purely using league position.
 
-2. **Baltimore, Man City & Liverpool:** The top dogs, these teams were the best in the league for attacking and defensive strengths. This is to be expected with Man City and Liverpool well ahead in the premier league standings and the Baltimore Ravens were the number 1 team in the NFL regular season.
+2. **Baltimore, Man City and Liverpool:** The top dogs, these teams were the best in the league for attacking and defensive strengths. This is to be expected with Man City and Liverpool well ahead in the premier league standings and the Baltimore Ravens were the number 1 team in the NFL regular season.
 
-4. **Tampa Bay, Seattle & Chelsea:** All-out attack, these teams have significantly more success attacking than they do defensively. The 'we'll score more than you' sort of teams.
+4. **Tampa Bay, Seattle and Chelsea:** All-out attack, these teams have significantly more success attacking than they do defensively. The 'we'll score more than you' sort of teams.
 
-5. **Denver, Pittsburgh, Chicago, Buffalo & Sheffield United:** You shall not pass, these teams have rock solid defences although they don't offer much in the attacking sense. 
+5. **Denver, Pittsburgh, Chicago, Buffalo and Sheffield United:** You shall not pass, these teams have rock solid defences although they don't offer much in the attacking sense. 
 
 6. **New England, Manchester United** The most hated teams? Arguably the two most hated teams in both leagues have been grouped together. This is more coincidence and because they are in the best-of-the-rest teams that favour defence over attack.
 
-# Summary & Potential Extensions
+# Summary and Potential Extensions
 In this project, we have grouped together similar Premier League and NFL teams based upon their respective attacking and defensive strengths. We scaled the goals/points scored and conceded by teams in each league to put them on a comparative scale. We then used k-means clustering to cluster the teams to see identify similar teams across the leagues. 
 
 We could extend this work further by considering other metrics for each team in addition to attacking and defensive strength. These could include:
@@ -300,7 +301,7 @@ We could also look at alternative clustering techniques. One of the downfalls of
 
 
 ```{r groupings}
-load('./data/scoresClustered.Rdata')
+load('../data/scoresClustered.Rdata')
 kable(select(scoresClustered, Cluster, Team))%>%
   kable_styling()%>%
   collapse_rows(latex_hline="major")%>%

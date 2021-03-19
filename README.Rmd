@@ -9,7 +9,8 @@ output:
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  echo=FALSE
 )
 library(tidyverse)
 library(ggrepel)
@@ -28,13 +29,21 @@ By looking at the number of goals/points scored and conceded by each time we can
 
 For the full project report see Report.html file.
 
-The final groupings of teams is given below:
+The final plot of the attacking a defensive score metrics is given below, along with the final groupings of teams.
+
+```{r kMeans}
+load('./data/scoresClustered.Rdata')
+
+ggplot(scoresClustered, mapping=aes(x=Defence, y=Attack))+
+  geom_point(aes(col=Cluster))+
+  geom_text_repel(aes(label=Team, col=Cluster))+
+  theme(legend.position='none')
+```
 
 ```{r groupings, echo=FALSE}
 load('./data/scoresClustered.Rdata')
 kable(select(scoresClustered, Cluster, Team))%>%
   kable_styling()%>%
-  collapse_rows(latex_hline="major")%>%
-  scroll_box(height='500px')
+  collapse_rows(latex_hline="major")
 ```
 

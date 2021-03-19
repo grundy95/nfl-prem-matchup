@@ -1,8 +1,3 @@
----
-output: 
-  html_document:
-    keep_md: yes
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -18,13 +13,15 @@ By looking at the number of goals/points scored and conceded by each time we can
 
 For the full project report see Report.html file.
 
-The final groupings of teams is given below:
+The final plot of the attacking a defensive score metrics is given below, along with the final groupings of teams.
 
-<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:500px; "><table class="table" style="margin-left: auto; margin-right: auto;">
+![](README_files/figure-html/kMeans-1.png)<!-- -->
+
+<table class="table" style="margin-left: auto; margin-right: auto;">
  <thead>
   <tr>
-   <th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;"> Cluster </th>
-   <th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;"> Team </th>
+   <th style="text-align:left;"> Cluster </th>
+   <th style="text-align:left;"> Team </th>
   </tr>
  </thead>
 <tbody>
@@ -237,5 +234,5 @@ The final groupings of teams is given below:
    <td style="text-align:left;"> Norwich </td>
   </tr>
 </tbody>
-</table></div>
+</table>
 
